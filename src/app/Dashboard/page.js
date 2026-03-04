@@ -1,37 +1,130 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Montserrat, Poppins } from 'next/font/google';
+
+// IMPORTAMOS EL CONTEXTO Y SUPABASE
+import { ThemeContext } from '@/context/ThemeContext'; 
+import { supabase } from '@/lib/supabase';
 
 const montserrat = Montserrat({ subsets: ['latin'], weight: ['700', '900'] });
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 export default function Dashboard() {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+  const { modoOscuro } = useContext(ThemeContext);
+
+  // --- ESTADOS PARA SUPABASE ---
+  const [perfil, setPerfil] = useState(null);
+  const [nombreUsuario, setNombreUsuario] = useState('');
+  const [cargando, setCargando] = useState(true);
+
+  // --- MODO OSCURO ---
+  const themeBg = modoOscuro ? 'bg-gray-900' : 'bg-[#F3F4F6]';
+  const cardBg = modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
+  const textPrimary = modoOscuro ? 'text-white' : 'text-gray-900';
+  const textSecondary = modoOscuro ? 'text-gray-400' : 'text-gray-500';
+
+  // --- FECHA ACTUAL ---
+  const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // --- REGISTRO (MI TEMPLO) ---
+  const [agua, setAgua] = useState(1.5);
+  const [calorias, setCalorias] = useState(1240);
+
+  const registrarAguaRapido = () => setAgua(prev => parseFloat((prev + 0.25).toFixed(2)));
+  const registrarCaloriasRapido = () => setCalorias(prev => prev + 150); 
+
+  // --- TAREAS DIARIAS (ROADMAP) ---
+  const [tareas, setTareas] = useState([
+    { id: 1, texto: 'Tomar 2L de agua', completada: false },
+    { id: 2, texto: 'Ahorrar $50 pesos', completada: false },
+    { id: 3, texto: 'Leer sobre visados', completada: false },
+    { id: 4, texto: 'Caminar 30 mins', completada: true }
+  ]);
+
+  const toggleTarea = (id) => {
+    setTareas(tareas.map(t => t.id === id ? { ...t, completada: !t.completada } : t));
+  };
+
+  // --- NOTIFICACIONES SIMULADAS ---
+  const listaNotificaciones = [
+    { id: 1, titulo: '¡Hora de hidratarse!', mensaje: 'No has tomado agua en 3 horas.', tiempo: 'Hace 5 min', icono: '💧', bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-500' },
+    { id: 2, titulo: 'Meta financiera', mensaje: 'Estás a $500 de tu meta mensual.', tiempo: 'Hace 2 hrs', icono: '💰', bg: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-500' },
+    { id: 3, titulo: 'Racha de pasos', mensaje: '¡Llevas 3 días cumpliendo tu meta!', tiempo: 'Ayer', icono: '🔥', bg: 'bg-rose-100 dark:bg-rose-900/40 text-rose-500' },
+  ];
+
+  // --- TRAER DATOS DE SUPABASE ---
+  useEffect(() => {
+    async function cargarDatos() {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          router.push('/Login');
+          return;
+        }
+
+        if (user.user_metadata?.nombres) {
+          setNombreUsuario(user.user_metadata.nombres.split(' ')[0]);
+        }
+
+        const { data, error: dbError } = await supabase
+          .from('perfiles_goat')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (dbError && dbError.code !== 'PGRST116') throw dbError;
+        if (data) setPerfil(data);
+
+      } catch (error) {
+        console.error("Error cargando perfil:", error);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarDatos();
+  }, [router]);
+
+  // CÁLCULO DE DÍAS RESTANTES PARA EL SUEÑO
+  let diasRestantes = '--';
+  if (perfil?.fecha_ideal) {
+    const hoy = new Date();
+    const meta = new Date(perfil.fecha_ideal);
+    const diferencia = meta.getTime() - hoy.getTime();
+    diasRestantes = Math.ceil(diferencia / (1000 * 3600 * 24));
+    if (diasRestantes < 0) diasRestantes = 0; // Si ya pasó la fecha
+  }
+
+  // --- PANTALLA DE CARGA ---
+  if (cargando) {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center ${themeBg} ${poppins.className}`}>
+        <div className="w-16 h-16 border-4 border-teal-200 border-t-teal-700 rounded-full animate-spin mb-4"></div>
+        <p className={`font-bold text-lg animate-pulse ${textPrimary}`}>Cargando tu progreso en GOAT...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex h-screen w-full bg-[#F3F4F6] overflow-hidden ${poppins.className}`}>
+    <div className={`flex h-screen w-full transition-colors duration-500 ${themeBg} overflow-hidden ${poppins.className}`}>
       
-      {/* OVERLAY MÓVIL */}
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm transition-opacity"
-          onClick={() => setIsMobileMenuOpen(false)}
-        ></div>
+        <div className="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm transition-opacity" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+      {isNotifOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)}></div>
       )}
 
       {/* MENÚ LATERAL */}
-      <aside 
-        className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30 flex flex-col w-72 bg-teal-900 text-white shadow-2xl`}
-      >
-        <button 
-          onClick={() => setIsMobileMenuOpen(false)}
-          className="md:hidden absolute top-6 right-6 text-teal-300 hover:text-white transition-colors"
-        >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
+      <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30 flex flex-col w-72 bg-teal-900 text-white shadow-2xl`}>
+        <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden absolute top-6 right-6 text-teal-300 hover:text-white transition-colors cursor-pointer">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
         <div className="p-8 flex justify-center border-b border-teal-800">
@@ -43,18 +136,15 @@ export default function Dashboard() {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             Vista General
           </Link>
-          
-          <Link href="#" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-6 py-4 text-teal-100 hover:bg-teal-800/50 hover:text-white rounded-2xl font-medium transition-all">
+          <Link href="/Templo" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-6 py-4 text-teal-100 hover:bg-teal-800/50 hover:text-white rounded-2xl font-medium transition-all">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
             Mi Templo
           </Link>
-
           <Link href="/Reportes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-6 py-4 text-teal-100 hover:bg-teal-800/50 hover:text-white rounded-2xl font-medium transition-all">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 12a2 2 0 000 4h4v-4h-4z"></path></svg>
             Mi Tesoro
           </Link>
-
-          <Link href="#" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-6 py-4 text-teal-100 hover:bg-teal-800/50 hover:text-white rounded-2xl font-medium transition-all">
+          <Link href="/Destino" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 px-6 py-4 text-teal-100 hover:bg-teal-800/50 hover:text-white rounded-2xl font-medium transition-all">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
             Mi Destino
           </Link>
@@ -70,153 +160,254 @@ export default function Dashboard() {
 
       {/* CONTENIDO PRINCIPAL */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
-        <header className="flex justify-between items-center p-6 md:p-10">
-          <button 
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="md:hidden p-2 bg-white rounded-xl shadow-sm text-teal-900 border border-gray-100 cursor-pointer"
-          >
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-          </button>
-
-          <div className="hidden md:block">
-            <h1 className={`${montserrat.className} text-3xl font-black text-gray-900`}>
-              Hola, Ana Laura 👋
-            </h1>
-            <p className="text-gray-500 font-medium mt-1">
-              Hoy es un gran día para avanzar en tus metas.
-            </p>
+        
+        {/* HEADER */}
+        <header className={`flex justify-between items-center p-6 md:px-10 md:py-8 border-b backdrop-blur-md sticky top-0 z-30 transition-colors duration-500 ${modoOscuro ? 'bg-gray-900/80 border-gray-800' : 'bg-[#F3F4F6]/80 border-transparent'}`}>
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsMobileMenuOpen(true)} className={`md:hidden p-2 rounded-xl shadow-sm border transition-colors cursor-pointer ${cardBg} ${textPrimary}`}>
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div className="hidden md:block">
+              {/* SALUDO DINÁMICO */}
+              <h1 className={`${montserrat.className} text-3xl font-black transition-colors duration-500 ${textPrimary}`}>
+                Hola, {nombreUsuario || 'GOAT'} 👋
+              </h1>
+              <p className={`font-medium mt-1 transition-colors duration-500 ${textSecondary} capitalize`}>
+                {fechaHoy}
+              </p>
+            </div>
           </div>
 
-          <Link href="/Perfil" className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-full shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group">
-            <div className="w-10 h-10 bg-teal-100 group-hover:bg-teal-200 rounded-full flex items-center justify-center text-teal-800 font-bold text-lg transition-colors">
-              AL
+          <div className="flex items-center gap-4">
+            {/* ÍNDICE GOAT */}
+            <div className="hidden lg:flex items-center gap-2 mr-4 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700">
+              <span className={`text-xs font-bold ${textPrimary}`}>Índice GOAT:</span>
+              <div className="flex -space-x-2">
+                <div className="w-6 h-6 rounded-full border-2 border-[#F3F4F6] dark:border-gray-900 bg-rose-500 flex items-center justify-center"><span className="text-[10px] text-white">T</span></div>
+                <div className="w-6 h-6 rounded-full border-2 border-[#F3F4F6] dark:border-gray-900 bg-emerald-500 flex items-center justify-center"><span className="text-[10px] text-white">$</span></div>
+                <div className="w-6 h-6 rounded-full border-2 border-[#F3F4F6] dark:border-gray-900 bg-indigo-500 flex items-center justify-center"><span className="text-[10px] text-white">✈</span></div>
+              </div>
+              <span className="text-sm font-black text-teal-600 dark:text-teal-400 ml-1">Equilibrado</span>
             </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-sm font-bold text-gray-900 leading-tight group-hover:text-teal-700 transition-colors">Ana Laura</p>
-              <p className="text-xs text-gray-500 font-medium">Nivel: Aprendiz</p>
+
+            {/* NOTIFICACIONES */}
+            <div className="relative z-50">
+              <button onClick={() => setIsNotifOpen(!isNotifOpen)} className={`relative p-2.5 rounded-full transition-colors cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${textPrimary}`}>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-[#F3F4F6] dark:border-gray-900"></span>
+              </button>
+
+              {isNotifOpen && (
+                <div className={`absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl shadow-2xl border transition-all animate-fade-in-up origin-top-right ${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  <div className={`absolute -top-2 right-3 w-4 h-4 rotate-45 border-l border-t ${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}></div>
+                  <div className={`relative p-5 border-b rounded-t-3xl flex justify-between items-center ${modoOscuro ? 'border-gray-700' : 'border-gray-100'}`}>
+                    <h3 className={`${montserrat.className} text-lg font-bold ${textPrimary}`}>Notificaciones</h3>
+                    <span className="text-xs bg-rose-100 text-rose-600 px-3 py-1 rounded-full font-bold">3 nuevas</span>
+                  </div>
+                  <div className="max-h-[350px] overflow-y-auto">
+                    {listaNotificaciones.map(notif => (
+                      <div key={notif.id} className={`p-5 border-b last:border-0 transition-colors cursor-pointer ${modoOscuro ? 'border-gray-700/50 hover:bg-gray-700/30' : 'border-gray-50 hover:bg-gray-50'}`}>
+                        <div className="flex gap-4 items-start">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-2xl ${notif.bg}`}>{notif.icono}</div>
+                          <div>
+                            <p className={`text-sm font-bold mb-0.5 ${textPrimary}`}>{notif.titulo}</p>
+                            <p className={`text-sm leading-snug mb-2 ${textSecondary}`}>{notif.mensaje}</p>
+                            <p className={`text-xs font-bold ${modoOscuro ? 'text-gray-500' : 'text-gray-400'}`}>{notif.tiempo}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className={`p-4 text-center border-t rounded-b-3xl text-sm font-bold transition-colors cursor-pointer ${modoOscuro ? 'border-gray-700 text-teal-400 hover:bg-gray-700/50' : 'border-gray-100 text-teal-700 hover:bg-gray-50'}`}>
+                    Marcar todas como leídas
+                  </div>
+                </div>
+              )}
             </div>
-          </Link>
+
+            {/* AVATAR DINÁMICO */}
+            <Link href="/Perfil" className={`flex items-center gap-3 px-2 py-2 md:px-5 md:py-2.5 rounded-full shadow-sm border hover:shadow-md transition-all cursor-pointer group ${cardBg}`}>
+              <div className="w-9 h-9 md:w-10 h-10 bg-teal-100 group-hover:bg-teal-200 rounded-full flex items-center justify-center text-teal-800 font-bold text-base md:text-lg transition-colors">
+                {nombreUsuario ? nombreUsuario.substring(0, 2).toUpperCase() : 'GT'}
+              </div>
+              <div className="hidden sm:block text-left pr-2">
+                <p className={`text-sm font-bold leading-tight group-hover:text-teal-500 transition-colors duration-500 ${textPrimary}`}>
+                  {nombreUsuario || 'Perfil'}
+                </p>
+              </div>
+            </Link>
+          </div>
         </header>
 
-        <div className="md:hidden px-6 pb-6">
-          <h1 className={`${montserrat.className} text-2xl font-black text-gray-900`}>
-            Hola, Ana Laura 👋
-          </h1>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Hoy es un gran día para avanzar.
-          </p>
-        </div>
-
-        {/* GRID DE TARJETAS */}
-        <div className="px-6 md:px-10 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="p-6 md:p-10 pb-10 flex flex-col gap-6 md:gap-8">
           
-          {/* TARJETA MI TEMPLO */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-5 text-teal-600 group-hover:scale-110 transition-transform">
-              <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            </div>
+          {/* FILA 2: LOS TRES PILARES */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-teal-100 p-3 rounded-2xl text-teal-700">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-              </div>
-              <h3 className={`${montserrat.className} text-xl font-bold text-gray-900`}>Mi Templo</h3>
-            </div>
-            
-            <div className="space-y-4">
+            {/* TARJETA MI TEMPLO */}
+            <div className={`rounded-3xl p-6 shadow-sm border hover:shadow-md transition-all duration-500 relative flex flex-col justify-between ${cardBg}`}>
               <div>
-                <p className="text-gray-500 text-sm font-medium mb-1">Calorías consumidas</p>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-black text-gray-900">1,240</span>
-                  <span className="text-gray-400 font-medium mb-1">/ 2,000 kcal</span>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-rose-100 p-2.5 rounded-xl text-rose-600">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    </div>
+                    <h3 className={`${montserrat.className} text-lg font-bold transition-colors duration-500 ${textPrimary}`}>Mi Templo</h3>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-teal-500 h-full rounded-full w-[62%]"></div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="bg-blue-50 p-3 rounded-2xl">
-                  <p className="text-blue-600 text-xs font-bold mb-1">AGUA</p>
-                  <p className="text-gray-900 font-bold">1.5 <span className="text-xs font-medium text-gray-500">L</span></p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-2xl">
-                  <p className="text-green-600 text-xs font-bold mb-1">PASOS</p>
-                  <p className="text-gray-900 font-bold">4,500 <span className="text-xs font-medium text-gray-500">hoy</span></p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* TARJETA MI TESORO */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative overflow-hidden group lg:col-span-2 flex flex-col justify-between">
-             <div className="absolute top-0 right-0 p-4 opacity-5 text-emerald-600 group-hover:scale-110 transition-transform">
-              <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.95V5h-2.35v1.73c-1.6.35-2.68 1.49-2.68 2.87 0 1.7 1.36 2.55 3.43 3.05 1.8.42 2.27 1.03 2.27 1.77 0 .94-.87 1.61-2.21 1.61-1.54 0-2.24-.8-2.31-1.84h-1.76c.09 1.58 1.05 2.72 2.68 3.13V20h2.35v-1.76c1.74-.39 2.86-1.54 2.86-3.14 0-1.72-1.3-2.58-3.44-3.09z"/></svg>
-            </div>
-
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="bg-emerald-100 p-3 rounded-2xl text-emerald-700">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 12a2 2 0 000 4h4v-4h-4z"></path></svg>
-                </div>
-                <h3 className={`${montserrat.className} text-xl font-bold text-gray-900`}>Mi Tesoro</h3>
-              </div>
-              <Link href="/Reportes" className="text-teal-700 font-bold text-sm hover:underline bg-teal-50 px-4 py-2 rounded-full transition-colors hover:bg-teal-100">
-                Ver detalles
-              </Link>
-            </div>
-
-            <div className="flex flex-col gap-6 relative z-10">
-              <div>
-                <p className="text-gray-500 text-sm font-medium mb-1">Balance Disponible</p>
-                <div className="flex flex-wrap items-end gap-3 md:gap-4">
-                  <p className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">$8,000<span className="text-2xl text-gray-400">.00</span></p>
-                  <span className="bg-emerald-100 text-emerald-800 text-sm font-bold px-3 py-1 rounded-full mb-1">+12% este mes</span>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                <p className="text-gray-500 text-sm font-medium mb-2">Progreso de Ahorro Mensual</p>
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-2xl font-bold text-gray-900">$2,500</span>
-                  <span className="text-sm font-bold text-gray-400">Meta: $5,000</span>
-                </div>
-                <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full w-[50%] relative">
-                    <div className="absolute top-0 right-0 bottom-0 left-0 bg-gradient-to-r from-transparent to-white/30"></div>
+                
+                <div className="mb-5">
+                  <div className="flex justify-between items-end mb-1">
+                    <p className={`text-sm font-medium transition-colors duration-500 ${textSecondary}`}>Calorías (De tu meta ideal)</p>
+                    <button onClick={registrarCaloriasRapido} className="w-6 h-6 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-600 flex items-center justify-center font-bold text-lg transition-colors cursor-pointer" title="Añadir Snack">＋</button>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <span className={`text-2xl font-black transition-colors duration-500 ${textPrimary}`}>{calorias}</span>
+                    <span className={`text-xs font-medium mb-1 transition-colors duration-500 ${textSecondary}`}>/ 2,000 kcal</span>
+                  </div>
+                  <div className={`w-full h-2 rounded-full mt-2 overflow-hidden transition-colors ${modoOscuro ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                    <div className="bg-rose-500 h-full rounded-full transition-all duration-300" style={{width: `${(calorias/2000)*100}%`}}></div>
                   </div>
                 </div>
               </div>
-
-            </div>
-          </div>
-
-          {/* TARJETA MI DESTINO */}
-          <div className="bg-gradient-to-br from-teal-800 to-teal-900 rounded-3xl p-6 shadow-lg text-white relative overflow-hidden lg:col-span-3 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-teal-700/50 rounded-full blur-3xl"></div>
-            
-            <div className="flex items-center gap-6 relative z-10 w-full md:w-auto">
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/20 shrink-0">
-                <svg className="w-8 h-8 text-teal-100" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+              
+              <div className={`p-4 rounded-2xl flex items-center justify-between transition-colors ${modoOscuro ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+                <div>
+                  <p className="text-blue-500 text-xs font-bold mb-1">HIDRATACIÓN</p>
+                  <p className={`font-bold transition-colors duration-500 ${textPrimary}`}>{agua} <span className="text-xs font-medium">L</span></p>
+                </div>
+                <button onClick={registrarAguaRapido} className="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-md flex items-center justify-center font-bold text-xl transition-transform hover:scale-105 cursor-pointer">
+                  +
+                </button>
               </div>
+            </div>
+
+            {/* TARJETA MI TESORO (CONECTADA A SUPABASE) */}
+            <div className={`rounded-3xl p-6 shadow-sm border hover:shadow-md transition-all duration-500 flex flex-col justify-between ${cardBg}`}>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-100 p-2.5 rounded-xl text-emerald-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12V7H5a2 2 0 010-4h14v4M3 5v14a2 2 0 002 2h16v-5M18 12a2 2 0 000 4h4v-4h-4z"></path></svg>
+                  </div>
+                  <h3 className={`${montserrat.className} text-lg font-bold transition-colors duration-500 ${textPrimary}`}>Mi Tesoro</h3>
+                </div>
+                <Link href="/Reportes" className={`text-xs font-bold hover:underline transition-colors ${modoOscuro ? 'text-emerald-400' : 'text-emerald-600'}`}>Ver detalles</Link>
+              </div>
+
               <div>
-                <p className="text-teal-200 text-sm font-bold tracking-wider uppercase mb-1">Tu Próximo Gran Destino</p>
-                <h3 className={`${montserrat.className} text-2xl md:text-3xl font-black text-white`}>Viajar a Japón</h3>
-                <p className="text-teal-100 font-medium mt-1">Categoría: Viajes y Experiencias</p>
+                <p className={`text-sm font-medium mb-1 transition-colors duration-500 ${textSecondary}`}>Ingreso Mensual (Real)</p>
+                <p className={`text-4xl font-black tracking-tight mb-2 transition-colors duration-500 ${textPrimary}`}>
+                  ${perfil?.ingreso_mensual?.toLocaleString() || '0'}<span className={`text-xl transition-colors duration-500 ${textSecondary}`}>.00</span>
+                </p>
+                <span className={`text-xs font-bold px-2 py-1 rounded-md transition-colors ${modoOscuro ? 'bg-emerald-900/50 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>Ahorro en progreso</span>
+              </div>
+
+              <div className={`mt-6 pt-5 border-t transition-colors duration-500 ${modoOscuro ? 'border-gray-700' : 'border-gray-100'}`}>
+                <div className="flex justify-between items-end mb-2">
+                  <div>
+                    <p className={`text-xs font-bold uppercase transition-colors duration-500 ${textSecondary}`}>Tu Meta de Ahorro</p>
+                    {/* MOSTRAMOS LA META DE AHORRO REAL */}
+                    <span className={`text-lg font-bold transition-colors duration-500 ${textPrimary}`}>
+                      ${perfil?.meta_ahorro?.toLocaleString() || '0'}
+                    </span>
+                  </div>
+                  <span className={`text-xs font-bold transition-colors duration-500 ${textSecondary}`}>50%</span>
+                </div>
+                <div className={`w-full h-2 rounded-full overflow-hidden transition-colors ${modoOscuro ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                  <div className="bg-emerald-500 h-full w-[50%]"></div>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center min-w-[180px] w-full md:w-auto relative z-10">
-              <p className="text-teal-200 text-xs font-bold uppercase mb-1">Faltan</p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-black text-white">245</span>
-                <span className="text-teal-100 font-medium">días</span>
+            {/* ROADMAP */}
+            <div className={`rounded-3xl p-6 shadow-sm border hover:shadow-md transition-all duration-500 flex flex-col ${cardBg}`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-amber-100 p-2.5 rounded-xl text-amber-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                </div>
+                <h3 className={`${montserrat.className} text-lg font-bold transition-colors duration-500 ${textPrimary}`}>Acciones de Hoy</h3>
               </div>
-              <p className="text-teal-100 text-xs mt-1">27 / 01 / 2030</p>
+
+              <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+                {tareas.map((tarea) => (
+                  <div 
+                    key={tarea.id}
+                    onClick={() => toggleTarea(tarea.id)}
+                    className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
+                      tarea.completada 
+                        ? (modoOscuro ? 'bg-emerald-900/10 border-emerald-900/30' : 'bg-emerald-50 border-emerald-100')
+                        : (modoOscuro ? 'bg-gray-700/30 border-transparent hover:bg-gray-700' : 'bg-gray-50 border-transparent hover:bg-gray-100')
+                    }`}
+                  >
+                    <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border transition-colors shrink-0 ${
+                      tarea.completada 
+                        ? 'bg-emerald-500 border-emerald-500 text-white' 
+                        : (modoOscuro ? 'border-gray-500' : 'border-gray-300')
+                    }`}>
+                      {tarea.completada && <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>}
+                    </div>
+                    <p className={`text-sm font-medium transition-all ${
+                      tarea.completada 
+                        ? 'line-through text-gray-400' 
+                        : (modoOscuro ? 'text-gray-200' : 'text-gray-700')
+                    }`}>
+                      {tarea.texto}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* FILA 3: VISION BOARD (CONECTADO A SUPABASE) */}
+          <div 
+            className="w-full rounded-[2rem] p-8 md:p-12 shadow-xl relative overflow-hidden group min-h-[300px] md:min-h-[350px] flex items-end cursor-pointer"
+            style={{
+              backgroundImage: "url('/japon.jpg')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity group-hover:from-black/95"></div>
+            
+            <div className="relative z-10 w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-white/20 backdrop-blur-md p-2 rounded-lg text-white border border-white/30">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                  </div>
+                  {/* CATEGORÍA REAL */}
+                  <span className="text-white font-bold tracking-widest uppercase text-xs">
+                    {perfil?.categoria_sueno || 'Tu Gran Destino'}
+                  </span>
+                </div>
+                {/* SUEÑO REAL */}
+                <h2 className={`${montserrat.className} text-4xl md:text-5xl font-black text-white drop-shadow-md mb-2`}>
+                  {perfil?.gran_sueno || 'Viajar a Japón'}
+                </h2>
+                <p className="text-gray-200 font-medium text-sm md:text-base max-w-lg">
+                  El sistema está monitoreando tus avances diarios para que cumplas tu sueño en tiempo y forma.
+                </p>
+              </div>
+
+              <Link href="/Destino" className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 text-center min-w-[160px] hover:bg-white/20 transition-colors shadow-2xl">
+                <p className="text-white/80 text-xs font-bold uppercase mb-1">Días restantes</p>
+                <div className="flex items-baseline justify-center gap-1">
+                  {/* CÁLCULO DE DÍAS REALES */}
+                  <span className="text-4xl font-black text-white">{diasRestantes}</span>
+                </div>
+                <div className="w-full bg-white/20 h-1.5 rounded-full mt-3 overflow-hidden">
+                  <div className="bg-white h-full rounded-full w-[40%]"></div>
+                </div>
+              </Link>
             </div>
           </div>
+
         </div>
       </main>
+
     </div>
   );
 }
