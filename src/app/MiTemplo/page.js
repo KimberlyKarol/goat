@@ -56,7 +56,7 @@ export default function MiTemplo() {
 
       if (dbError) throw dbError;
 
-      // C. ¡Éxito! Lo mandamos a la siguiente pantalla (Mi Tesoro)
+      // C. ¡Éxito! Lo mandamos a la siguiente pantalla
       router.push('/MiTesoro'); 
 
     } catch (err) {

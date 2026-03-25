@@ -10,7 +10,7 @@ export default function LandingPage() {
     <div className={`min-h-screen w-full bg-white selection:bg-teal-200 selection:text-teal-900 ${poppins.className} overflow-x-hidden relative`}>
       
       {/* ================================================================== */}
-      {/* MARCA DE AGUA (WATERMARK) */}
+      {/* MARCA DE AGUA */}
       {/* ================================================================== */}
       <div className="fixed inset-0 z-0 flex items-center justify-center pointer-events-none overflow-hidden">
         <img 
@@ -21,7 +21,7 @@ export default function LandingPage() {
       </div>
 
       {/* ================================================================== */}
-      {/* NAVEGACIÓN SUPERIOR (NAVBAR) */}
+      {/* NAVEGACIÓN SUPERIOR */}
       {/* ================================================================== */}
       <nav className="absolute top-0 w-full p-6 md:px-12 flex justify-between items-center z-50">
         <div className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ================================================================= */}
-      {/* HERO SECTION (Sección Principal) */}
+      {/* HERO SECTION */}
       {/* ================================================================== */}
       <section className="relative z-10 pt-32 pb-20 md:pt-48 md:pb-32 px-6 flex flex-col items-center justify-center text-center overflow-hidden">
         
@@ -75,9 +75,8 @@ export default function LandingPage() {
       </section>
 
       {/* ================================================================== */}
-      {/* SECCIÓN DE PILARES (Features) */}
+      {/* SECCIÓN DE PILARES */}
       {/* ================================================================== */}
-      {/* El fondo bg-gray-50/80 y backdrop-blur permite ver la marca de agua */}
       <section className="relative z-10 py-20 bg-gray-50/80 backdrop-blur-md px-6 border-y border-gray-200/50">
         <div className="max-w-6xl mx-auto">
           
@@ -130,7 +129,7 @@ export default function LandingPage() {
       </section>
 
       {/* ================================================================== */}
-      {/* CTA FINAL (Call to Action) */}
+      {/* CTA FINAL */}
       {/* ================================================================== */}
       <section className="relative z-10 py-24 px-6 overflow-hidden flex justify-center bg-white/50 backdrop-blur-sm">
         <div className="bg-teal-900 rounded-[3rem] max-w-5xl w-full p-10 md:p-20 text-center relative overflow-hidden shadow-2xl">

@@ -2,10 +2,10 @@
 
 import React, { createContext, useState, useEffect } from 'react';
 
-// 1. Creamos el contexto
+// Creamos el contexto
 export const ThemeContext = createContext();
 
-// 2. Creamos el proveedor que envolverá a toda la app
+// Creamos el proveedor que envolverá a toda la app
 export const ThemeProvider = ({ children }) => {
   const [modoOscuro, setModoOscuro] = useState(false);
 

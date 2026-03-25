@@ -11,14 +11,13 @@ import { supabase } from '@/lib/supabase';
 const montserrat = Montserrat({ subsets: ['latin'], weight: ['700', '900'] });
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
-// Componente interno que usa useSearchParams
+// Componente interno que usa useSearchParams Privado para manejar la lógica del formulario
 function FormularioValidacion() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
   const email = searchParams.get('email') || 'tu correo';
 
-  // AHORA SON 8 ESPACIOS EN BLANCO
   const [codigo, setCodigo] = useState(['', '', '', '', '', '', '', '']);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
@@ -27,17 +26,15 @@ function FormularioValidacion() {
 
   // --- LÓGICA DE LOS 8 CUADRITOS ---
   const handleChange = (e, index) => {
-    // Ahora permite letras y números, y lo convierte a mayúsculas para que se vea mejor
     const value = e.target.value.toUpperCase(); 
     
-    // Evita símbolos raros, solo letras y números
     if (/[^A-Z0-9]/.test(value)) return; 
 
     const nuevoCodigo = [...codigo];
     nuevoCodigo[index] = value;
     setCodigo(nuevoCodigo);
 
-    // Salta al siguiente cuadrito (ahora el límite es 7 en lugar de 5)
+    // Salta al siguiente cuadrito
     if (value !== '' && index < 7) {
       inputRefs.current[index + 1].focus();
     }

@@ -41,7 +41,7 @@ export default function MiTesoroRegistro() {
           meta_ahorro: parseFloat(metaAhorro),
           deudas: parseFloat(deudas)
         })
-        .eq('id', user.id); // Condición: Actualiza donde el ID sea el de este usuario
+        .eq('id', user.id); // Condicion para actualizar donde el ID sea el de este usuario
 
       if (dbError) throw dbError;
 

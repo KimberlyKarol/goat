@@ -43,7 +43,7 @@ export default function Registro() {
       setError(supabaseError.message);
       setCargando(false);
     } else {
-      // AQUÍ ESTÁ LA MAGIA: Mandamos el correo por la URL a la página de validación
+      // Mandamos el correo por codigo a la página de validación
       router.push(`/Validacion?email=${encodeURIComponent(email)}`);
     }
   };
