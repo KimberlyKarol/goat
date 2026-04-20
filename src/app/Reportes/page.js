@@ -100,11 +100,26 @@ export default function Reportes() {
         <Header perfil={datosPerfil} modoOscuro={modoOscuro} fechaHoy="Reporte Financiero" />
         
         <div className="p-6 md:p-10 space-y-8">
-          {/* Botones de Acción */}
+          {/* Botones de Acción Modificados */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-white font-bold">
-            <button onClick={() => { setFormTransaccion({...formTransaccion, tipo: 'Ingreso'}); setIsModalTransaccionOpen(true); }} className="bg-emerald-400 py-5 rounded-3xl shadow-lg active:scale-95 transition-all">💰 Nuevo Ingreso</button>
-            <button onClick={() => { setFormTransaccion({...formTransaccion, tipo: 'Gasto'}); setIsModalTransaccionOpen(true); }} className="bg-rose-400 py-5 rounded-3xl shadow-lg active:scale-95 transition-all">📉 Nuevo Gasto</button>
-            <button onClick={() => { setFormTransaccion({...formTransaccion, tipo: 'Ahorro'}); setIsModalTransaccionOpen(true); }} className="bg-indigo-400 py-5 rounded-3xl shadow-lg active:scale-95 transition-all">🏦 Ahorro</button>
+            <button 
+              onClick={() => { setFormTransaccion({...formTransaccion, tipo: 'Ingreso'}); setIsModalTransaccionOpen(true); }} 
+              className="bg-emerald-400 py-5 rounded-3xl shadow-[0_9px_0_rgb(16,185,129)] hover:shadow-[0_4px_0_rgb(16,185,129)] hover:translate-y-[2px] active:shadow-none active:translate-y-[9px] transition-all duration-150"
+            >
+              💰 Nuevo Ingreso
+            </button>
+            <button 
+              onClick={() => { setFormTransaccion({...formTransaccion, tipo: 'Gasto'}); setIsModalTransaccionOpen(true); }} 
+              className="bg-rose-400 py-5 rounded-3xl shadow-[0_9px_0_rgb(225,29,72)] hover:shadow-[0_4px_0_rgb(225,29,72)] hover:translate-y-[2px] active:shadow-none active:translate-y-[9px] transition-all duration-150"
+            >
+              📉 Nuevo Gasto
+            </button>
+            <button 
+              onClick={() => { setFormTransaccion({...formTransaccion, tipo: 'Ahorro'}); setIsModalTransaccionOpen(true); }} 
+              className="bg-indigo-400 py-5 rounded-3xl shadow-[0_9px_0_rgb(79,70,229)] hover:shadow-[0_4px_0_rgb(79,70,229)] hover:translate-y-[2px] active:shadow-none active:translate-y-[9px] transition-all duration-150"
+            >
+              🏦 Ahorro
+            </button>
           </div>
 
           {/* Totales */}
@@ -150,7 +165,14 @@ export default function Reportes() {
             <form onSubmit={handleGuardarTransaccion} className="space-y-6">
               <input type="number" step="0.01" value={formTransaccion.monto} onChange={(e) => setFormTransaccion({...formTransaccion, monto: e.target.value})} placeholder="Monto $" required className="w-full rounded-2xl px-5 py-4 border-2 outline-none font-bold focus:border-indigo-300" />
               <input type="text" value={formTransaccion.titulo} onChange={(e) => setFormTransaccion({...formTransaccion, titulo: e.target.value})} placeholder="Concepto" required className="w-full rounded-2xl px-5 py-4 border-2 outline-none focus:border-indigo-300" />
-              <button type="submit" className={`w-full font-black py-5 rounded-2xl text-white shadow-xl transition-all active:scale-95 ${formTransaccion.tipo === 'Ingreso' ? 'bg-emerald-400' : formTransaccion.tipo === 'Gasto' ? 'bg-rose-400' : 'bg-indigo-400'}`}>
+              <button 
+                type="submit" 
+                className={`w-full font-black py-5 rounded-2xl text-white shadow-lg transition-all active:scale-95 ${
+                  formTransaccion.tipo === 'Ingreso' ? 'bg-emerald-400 shadow-emerald-200' : 
+                  formTransaccion.tipo === 'Gasto' ? 'bg-rose-400 shadow-rose-200' : 
+                  'bg-indigo-400 shadow-indigo-200'
+                }`}
+              >
                 {estadoGuardar}
               </button>
               <button type="button" onClick={() => setIsModalTransaccionOpen(false)} className="w-full font-bold py-2 text-slate-400">Cancelar</button>

@@ -28,27 +28,32 @@ export default function MiTemplo() {
 
   // --- 2. FUNCIÓN PARA GUARDAR EN SUPABASE ---
   const handleGuardarTemplo = async (e) => {
-    e.preventDefault(); // Evita que la página se recargue
+    e.preventDefault(); 
     setCargando(true);
     setError(null);
 
     try {
-      // A. Preguntamos a Supabase quién es el usuario actual
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
         throw new Error("No hay una sesión activa. Por favor, regresa al Login e inicia sesión.");
       }
 
+      // --- CORRECCIÓN AQUÍ: Convertimos el texto de alergias en un Array ---
+      // Si el usuario escribe "Nueces, Polen", esto lo convierte en ["Nueces", "Polen"]
+      // Si no escribe nada, envía un array vacío []
+      const listaAlergias = alergias 
+        ? alergias.split(',').map(item => item.trim()) 
+        : [];
+
       // B. Guardamos los datos en la gran tabla 'perfiles_goat'
-      // Usamos 'upsert' por si el usuario ya existe, solo lo actualiza
       const { error: dbError } = await supabase
         .from('perfiles_goat')
         .upsert({
-          id: user.id, // Vinculamos los datos al ID único del usuario
+          id: user.id, 
           edad: parseInt(edad),
           peso: parseFloat(peso),
-          alergias: alergias || 'Ninguna', // Si no pone nada, guardamos 'Ninguna'
+          alergias: listaAlergias, // ENVIAMOS EL ARRAY CORREGIDO
           estatura: parseFloat(estatura),
           genero: genero,
           actividad_fisica: actividadFisica
@@ -56,7 +61,6 @@ export default function MiTemplo() {
 
       if (dbError) throw dbError;
 
-      // C. ¡Éxito! Lo mandamos a la siguiente pantalla
       router.push('/MiTesoro'); 
 
     } catch (err) {
@@ -70,12 +74,9 @@ export default function MiTemplo() {
   return (
     <div className={`min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-200 via-pink-50 to-green-200 p-6 relative overflow-hidden ${poppins.className}`}>
       
-      {/* ELEMENTOS DE FONDO SUTILES */}
+      {/* ELEMENTOS DE FONDO */}
       <svg className="absolute -top-24 -left-24 w-[30rem] h-[30rem] text-teal-900 opacity-5 rotate-12 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-      </svg>
-      <svg className="absolute -bottom-32 -right-32 w-[34rem] h-[34rem] text-yellow-700 opacity-5 -rotate-12 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.95V5h-2.35v1.73c-1.6.35-2.68 1.49-2.68 2.87 0 1.7 1.36 2.55 3.43 3.05 1.8.42 2.27 1.03 2.27 1.77 0 .94-.87 1.61-2.21 1.61-1.54 0-2.24-.8-2.31-1.84h-1.76c.09 1.58 1.05 2.72 2.68 3.13V20h2.35v-1.76c1.74-.39 2.86-1.54 2.86-3.14 0-1.72-1.3-2.58-3.44-3.09z"/>
       </svg>
       
       {/* NAVEGACIÓN SUPERIOR */}
@@ -83,13 +84,9 @@ export default function MiTemplo() {
         <span className="text-2xl md:text-3xl leading-none">&larr;</span> Atrás
       </Link>
 
-      <img 
-        src="/logoext.png" 
-        alt="Logo GOAT" 
-        className="absolute top-8 right-8 md:top-10 md:right-12 h-16 md:h-28 w-auto object-contain z-10 drop-shadow-sm" 
-      />
+      <img src="/logoext.png" alt="Logo GOAT" className="absolute top-8 right-8 md:top-10 md:right-12 h-16 md:h-28 w-auto object-contain z-10 drop-shadow-sm" />
       
-      {/* TARJETA PRINCIPAL MI TEMPLO */}
+      {/* TARJETA PRINCIPAL */}
       <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 md:p-12 w-full max-w-5xl shadow-2xl z-10 mt-20 md:mt-0">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-10 border-b border-gray-200 pb-6 gap-6">
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
@@ -98,179 +95,86 @@ export default function MiTemplo() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
               </svg>
             </div>
-            <h2 className={`${montserrat.className} text-3xl md:text-4xl font-black text-black`}>
-              Mi Templo
-            </h2>
-            <p className="text-gray-600 text-lg font-medium">
-              Datos para tu salud física
-            </p>
+            <h2 className={`${montserrat.className} text-3xl md:text-4xl font-black text-black`}>Mi Templo</h2>
+            <p className="text-gray-600 text-lg font-medium">Datos para tu salud física</p>
           </div>
           <div className="bg-teal-600/5 rounded-2xl p-4 max-w-sm flex items-start">
             <svg className="w-6 h-6 text-teal-700 mr-3 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <p className="text-teal-900 font-medium text-sm md:text-base text-left leading-snug">
-              Estos datos nos ayudan a calcular tu ingesta calórica e hidratación ideal.
-            </p>
+            <p className="text-teal-900 font-medium text-sm md:text-base text-left leading-snug">Estos datos nos ayudan a calcular tu ingesta calórica e hidratación ideal.</p>
           </div>
         </div>
 
-        {/* ALERTA DE ERRORES */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl font-medium text-sm text-center border border-red-100">
             {error}
           </div>
         )}
 
-        {/* FORMULARIO CONECTADO AL EVENTO onSubmit */}
         <form onSubmit={handleGuardarTemplo} className="flex flex-col gap-6 text-left">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            
-            {/* EDAD */}
+            {/* INPUTS - Se mantienen igual pero alergias ahora acepta texto y se convierte antes de guardar */}
             <div className="w-full">
               <label className="block text-gray-800 font-bold mb-2 ml-2 text-lg">Edad:</label>
               <div className="flex items-center bg-[#F4EBE0] rounded-full px-4 py-3 border border-transparent focus-within:border-teal-600 transition-all">
-                <input 
-                  type="number" 
-                  required
-                  value={edad}
-                  onChange={(e) => setEdad(e.target.value)}
-                  placeholder="25" 
-                  className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" 
-                />
-                <span className="text-gray-400 font-medium select-none whitespace-nowrap ml-2">años</span>
+                <input type="number" required value={edad} onChange={(e) => setEdad(e.target.value)} placeholder="25" className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" />
+                <span className="text-gray-400 font-medium ml-2">años</span>
               </div>
             </div>
 
-            {/* PESO */}
             <div className="w-full">
               <label className="block text-gray-800 font-bold mb-2 ml-2 text-lg">Peso:</label>
               <div className="flex items-center bg-[#F4EBE0] rounded-full px-4 py-3 border border-transparent focus-within:border-teal-600 transition-all">
-                <input 
-                  type="number" 
-                  step="0.1"
-                  required
-                  value={peso}
-                  onChange={(e) => setPeso(e.target.value)}
-                  placeholder="60" 
-                  className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" 
-                />
-                <span className="text-gray-400 font-medium select-none whitespace-nowrap ml-2">kg</span>
+                <input type="number" step="0.1" required value={peso} onChange={(e) => setPeso(e.target.value)} placeholder="60" className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" />
+                <span className="text-gray-400 font-medium ml-2">kg</span>
               </div>
             </div>
 
-            {/* ALERGIAS */}
             <div className="w-full">
               <label className="block text-gray-800 font-bold mb-2 ml-2 text-lg">Alergias:</label>
               <div className="flex items-center bg-[#F4EBE0] rounded-full px-4 py-3 border border-transparent focus-within:border-teal-600 transition-all">
-                <input 
-                  type="text" 
-                  value={alergias}
-                  onChange={(e) => setAlergias(e.target.value)}
-                  placeholder="Nueces, Cacao" 
-                  className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" 
-                />
+                <input type="text" value={alergias} onChange={(e) => setAlergias(e.target.value)} placeholder="Nueces, Cacao" className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" />
               </div>
             </div>
 
-            {/* ESTATURA */}
             <div className="w-full">
               <label className="block text-gray-800 font-bold mb-2 ml-2 text-lg">Estatura:</label>
               <div className="flex items-center bg-[#F4EBE0] rounded-full px-4 py-3 border border-transparent focus-within:border-teal-600 transition-all">
-                <svg className="w-5 h-5 text-gray-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
-                </svg>
-                <input 
-                  type="number" 
-                  required
-                  value={estatura}
-                  onChange={(e) => setEstatura(e.target.value)}
-                  placeholder="165" 
-                  className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" 
-                />
-                <span className="text-gray-400 font-medium select-none whitespace-nowrap ml-2">cm</span>
+                <input type="number" required value={estatura} onChange={(e) => setEstatura(e.target.value)} placeholder="165" className="bg-transparent outline-none w-full text-gray-800 placeholder-gray-500 font-medium" />
+                <span className="text-gray-400 font-medium ml-2">cm</span>
               </div>
             </div>
 
-            {/* GÉNERO (VALIDADO) */}
             <div className="w-full">
               <label className="block text-gray-800 font-bold mb-2 ml-2 text-lg">Género:</label>
-              <div className={`flex items-center rounded-full p-1 border transition-all h-[52px] ${genero ? 'bg-[#F4EBE0] border-transparent' : 'bg-white border-gray-300'}`}>
-                
-                {/* Botón Femenino */}
-                <button 
-                  type="button"
-                  onClick={() => setGenero('Femenino')}
-                  className={`flex-1 flex justify-center items-center h-full rounded-full transition-all duration-300 ${
-                    genero === 'Femenino' 
-                      ? 'bg-rose-400 text-white shadow-md' 
-                      : 'text-gray-500 hover:text-rose-500 hover:bg-rose-50'
-                  }`}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                    <path d="M8 8.5V14c0 1.5 1 3 2.5 3"></path>
-                    <path d="M16 8.5V14c0 1.5-1 3-2.5 3"></path>
-                  </svg>
+              <div className={`flex items-center rounded-full p-1 border h-[52px] ${genero ? 'bg-[#F4EBE0] border-transparent' : 'bg-white border-gray-300'}`}>
+                <button type="button" onClick={() => setGenero('Femenino')} className={`flex-1 flex justify-center items-center h-full rounded-full transition-all ${genero === 'Femenino' ? 'bg-rose-400 text-white shadow-md' : 'text-gray-500'}`}>
+                  Femenino
                 </button>
-                
-                <div className="w-px h-6 bg-gray-300/50 mx-1"></div>
-
-                {/* Botón Masculino */}
-                <button 
-                  type="button"
-                  onClick={() => setGenero('Masculino')}
-                  className={`flex-1 flex justify-center items-center h-full rounded-full transition-all duration-300 ${
-                    genero === 'Masculino' 
-                      ? 'bg-blue-500 text-white shadow-md' 
-                      : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
-                  }`}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
+                <button type="button" onClick={() => setGenero('Masculino')} className={`flex-1 flex justify-center items-center h-full rounded-full transition-all ${genero === 'Masculino' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-500'}`}>
+                  Masculino
                 </button>
               </div>
             </div>
 
-            {/* ACTIVIDAD FÍSICA */}
             <div className="w-full">
               <label className="block text-gray-800 font-bold mb-2 ml-2 text-lg">Actividad física:</label>
-              <div className="flex items-center bg-[#F4EBE0] rounded-full px-4 py-3 border border-transparent focus-within:border-teal-600 transition-all relative">
-                <select 
-                  required
-                  value={actividadFisica}
-                  onChange={(e) => setActividadFisica(e.target.value)}
-                  className="bg-transparent outline-none w-full text-gray-800 font-medium appearance-none cursor-pointer"
-                >
+              <div className="flex items-center bg-[#F4EBE0] rounded-full px-4 py-3 border border-transparent focus-within:border-teal-600 transition-all">
+                <select required value={actividadFisica} onChange={(e) => setActividadFisica(e.target.value)} className="bg-transparent outline-none w-full text-gray-800 font-medium cursor-pointer appearance-none">
                   <option value="" disabled>Selecciona tu nivel</option>
                   <option value="sedentario">Poca o ninguna</option>
-                  <option value="ligera">Ligera (1-3 días/semana)</option>
-                  <option value="moderada">Moderada (3-5 días/semana)</option>
-                  <option value="intensa">Intensa (6-7 días/semana)</option>
+                  <option value="ligera">Ligera</option>
+                  <option value="moderada">Moderada</option>
+                  <option value="intensa">Intensa</option>
                 </select>
-                <div className="absolute right-4 pointer-events-none text-gray-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </div>
               </div>
             </div>
           </div>
 
           <div className="mt-8">
-            <button 
-              type="submit" 
-              disabled={cargando || !genero}
-              className={`w-full flex justify-center text-white font-bold text-xl py-4 rounded-full transition-all duration-300 shadow-md ${
-                cargando || !genero 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-teal-700 hover:bg-teal-800 hover:shadow-xl hover:-translate-y-1'
-              }`}
-            >
-              {cargando ? 'Guardando tu Templo...' : 'Siguiente'}
+            <button type="submit" disabled={cargando || !genero} className={`w-full text-white font-bold text-xl py-4 rounded-full transition-all ${cargando || !genero ? 'bg-gray-400' : 'bg-teal-700 hover:bg-teal-800'}`}>
+              {cargando ? 'Guardando...' : 'Siguiente'}
             </button>
           </div>
         </form>

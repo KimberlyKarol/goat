@@ -20,6 +20,10 @@ export default function Templo() {
   const [historial, setHistorial] = useState([]); 
   const [inputAgua, setInputAgua] = useState("");
   const [loading, setLoading] = useState(true);
+  
+  // ESTADOS NUEVOS PARA NOTIFICACIÓN Y DESHACER
+  const [mensajeExito, setMensajeExito] = useState(null);
+  const [ultimoRegistro, setUltimoRegistro] = useState(null);
 
   const themeBg = modoOscuro ? 'bg-gray-900' : 'bg-[#F3F4F6]';
   const cardBg = modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200';
@@ -66,13 +70,27 @@ export default function Templo() {
     cargarDatos();
   }, []);
 
-  const registrarAlimento = async (cals) => {
+  const registrarAlimento = async (cals, nombre) => {
     if (!consumoHoy.id) return;
     const nuevaSuma = (consumoHoy.calorias_consumidas || 0) + cals;
     const { error } = await supabase.from('consumo_diario').update({ calorias_consumidas: nuevaSuma }).eq('id', consumoHoy.id);
     if (!error) {
       setConsumoHoy(prev => ({ ...prev, calorias_consumidas: nuevaSuma }));
+      setUltimoRegistro(cals); // Guardamos para poder borrarlo
+      mostrarMensaje(`¡${nombre} registrado!`);
       cargarDatos(); 
+    }
+  };
+
+  const eliminarUltimoConsumo = async () => {
+    if (!consumoHoy.id || !ultimoRegistro) return;
+    const nuevaSuma = Math.max(0, (consumoHoy.calorias_consumidas || 0) - ultimoRegistro);
+    const { error } = await supabase.from('consumo_diario').update({ calorias_consumidas: nuevaSuma }).eq('id', consumoHoy.id);
+    if (!error) {
+      setConsumoHoy(prev => ({ ...prev, calorias_consumidas: nuevaSuma }));
+      setUltimoRegistro(null);
+      mostrarMensaje("Registro eliminado con éxito");
+      cargarDatos();
     }
   };
 
@@ -85,8 +103,14 @@ export default function Templo() {
     if (!error) {
       setConsumoHoy(prev => ({ ...prev, agua_ml: nuevaSuma }));
       setInputAgua("");
+      mostrarMensaje(`+${cantidad}ml de agua registrados`);
       cargarDatos(); 
     }
+  };
+
+  const mostrarMensaje = (msg) => {
+    setMensajeExito(msg);
+    setTimeout(() => setMensajeExito(null), 3000);
   };
 
   if (loading) return <div className={`h-screen flex items-center justify-center ${themeBg} text-teal-500 font-bold animate-pulse`}>Sincronizando Templo...</div>;
@@ -94,14 +118,31 @@ export default function Templo() {
   return (
     <div className={`flex h-screen w-full overflow-hidden ${themeBg} ${poppins.className}`}>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto relative">
         <Header perfil={perfil} modoOscuro={modoOscuro} fechaHoy="Mi Templo" />
+
+        {/* PANEL DE ÉXITO FLOTANTE */}
+        {mensajeExito && (
+          <div className="fixed top-20 right-10 z-50 bg-teal-600 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold animate-bounce">
+            ✨ {mensajeExito}
+          </div>
+        )}
 
         <div className="p-6 md:p-10 space-y-10">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className={`p-6 rounded-3xl border ${cardBg} shadow-sm`}>
-              <h3 className={`${montserrat.className} text-xl font-bold ${textPrimary}`}>Calorías Hoy</h3>
+            <div className={`p-6 rounded-3xl border ${cardBg} shadow-sm relative group`}>
+              <div className="flex justify-between items-center">
+                <h3 className={`${montserrat.className} text-xl font-bold ${textPrimary}`}>Calorías Hoy</h3>
+                {ultimoRegistro && (
+                  <button 
+                    onClick={eliminarUltimoConsumo}
+                    className="text-xs font-bold text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    ✕ Borrar último
+                  </button>
+                )}
+              </div>
               <div className="text-4xl font-black text-orange-500 mt-2">{consumoHoy.calorias_consumidas} <span className="text-sm text-gray-400">/ {perfil.meta_calorias} kcal</span></div>
               <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full mt-4 overflow-hidden">
                 <div className="bg-orange-500 h-full transition-all duration-500" style={{ width: `${Math.min((consumoHoy.calorias_consumidas / perfil.meta_calorias) * 100, 100)}%` }}></div>
@@ -118,7 +159,6 @@ export default function Templo() {
             </div>
           </div>
 
-          {/* LLAMADA AL COMPONENTE EXTERNO */}
           <HistorialNutricion 
             historial={historial} 
             modoOscuro={modoOscuro} 
@@ -137,7 +177,12 @@ export default function Templo() {
                     </div>
                     <p className={`mt-2 text-sm ${textSecondary}`}>{plan.descripcion}</p>
                   </div>
-                  <button onClick={() => registrarAlimento(plan.calorias)} className="mt-6 w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold transition-all">Registrar Consumo</button>
+                  <button 
+                    onClick={() => registrarAlimento(plan.calorias, plan.titulo)} 
+                    className="mt-6 w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold transition-all active:scale-95"
+                  >
+                    Registrar Consumo
+                  </button>
                 </div>
               ))}
             </div>
