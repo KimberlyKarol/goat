@@ -142,7 +142,7 @@ export default function Validacion() {
       </Link>
 
       {/* Logo */}
-      <img src="/logoext.png" alt="Logo GOAT" className="absolute top-8 right-8 h-12 w-auto object-contain z-10 drop-shadow-sm" />
+      <img src="/logo-ext.png" alt="Logo GOAT" className="absolute top-8 right-8 h-12 w-auto object-contain z-10 drop-shadow-sm" />
 
       {/* Suspense es necesario en Next.js 13+ al usar SearchParams */}
       <Suspense fallback={<div className="text-teal-800 font-bold">Cargando validador...</div>}>

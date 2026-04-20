@@ -29,7 +29,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
       {/* LOGO */}
       <div className="p-8 flex justify-center border-b border-teal-800">
-        <img src="/logoext.png" alt="Logo GOAT" className="h-28 w-auto object-contain filter brightness-0 invert" />
+        <img src="/logo-ext.png" alt="Logo GOAT" className="h-28 w-auto object-contain filter brightness-0 invert" />
       </div>
 
       {/* NAVEGACIÓN */}

@@ -176,7 +176,7 @@ export default function Perfil() {
         </button>
 
         <div className="p-8 flex justify-center border-b border-teal-800">
-          <img src="/logoext.png" alt="Logo GOAT" className="h-28 w-auto object-contain filter brightness-0 invert" />
+          <img src="/logo-ext.png" alt="Logo GOAT" className="h-28 w-auto object-contain filter brightness-0 invert" />
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">

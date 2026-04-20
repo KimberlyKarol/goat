@@ -62,7 +62,7 @@ export default function MiDestinoRegistro() {
         <span className="text-2xl md:text-3xl leading-none">&larr;</span> Atrás
       </Link>
 
-      <img src="/logoext.png" alt="Logo GOAT" className="absolute top-8 right-8 md:top-10 md:right-12 h-16 md:h-28 w-auto object-contain z-10 drop-shadow-sm" />
+      <img src="/logo-ext.png" alt="Logo GOAT" className="absolute top-8 right-8 md:top-10 md:right-12 h-16 md:h-28 w-auto object-contain z-10 drop-shadow-sm" />
       
       <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 md:p-12 w-full max-w-4xl shadow-2xl z-10 mt-20 md:mt-0">
         
