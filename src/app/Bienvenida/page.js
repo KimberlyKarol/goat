@@ -20,7 +20,7 @@ export default function Bienvenida() {
       <header className="w-full p-6 md:px-12 lg:px-24 flex items-center justify-between z-10">
         <div className="flex items-center">
           <img 
-            src="/LogoExt.png" 
+            src="/logo-ext.png" 
             alt="Logo GOAT" 
             className="h-20 md:h-24 lg:h-28 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300" 
           />
@@ -33,7 +33,7 @@ export default function Bienvenida() {
         {/* Logo Principal */}
         <div className="w-full md:w-1/2 flex items-center justify-center p-8 md:p-12 lg:p-16">
           <img
-            src="/Logo.png"
+            src="/logo-principal.png"
             alt="Ilustración principal GOAT"
             className="h-auto object-contain max-w-xs md:max-w-sm drop-shadow-2xl transition-transform duration-500 hover:scale-105"
           />
