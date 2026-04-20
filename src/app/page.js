@@ -14,7 +14,7 @@ export default function LandingPage() {
       {/* ================================================================== */}
       <div className="fixed inset-0 z-0 flex items-center justify-center pointer-events-none overflow-hidden">
         <img 
-          src="/logo.png" 
+          src="/logo-principal.png  " 
           alt="GOAT Marca de Agua"
           className="w-[150%] md:w-[80%] lg:w-[42%] opacity-[0.3] grayscale" 
         />
@@ -26,7 +26,7 @@ export default function LandingPage() {
       <nav className="absolute top-0 w-full p-6 md:px-12 flex justify-between items-center z-50">
         <div className="flex items-center gap-2">
           <img 
-            src="/logoext.png" 
+            src="/logo-ext.png" 
             alt="Logo GOAT" 
             className="h-20 md:h-24 lg:h-28 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300" 
           />
@@ -155,7 +155,7 @@ export default function LandingPage() {
       {/* ================================================================== */}
       <footer className="relative z-10 border-t border-gray-200/50 bg-white/80 backdrop-blur-md py-10 text-center text-gray-500 font-medium">
         <p>© 2026 Proyecto GOAT. Universidad Tecnológica de Tabasco (UTTAB).</p>
-        <p className="text-sm mt-2">Diseñado con ❤️ por Ana Laura.</p>
+        <p className="text-sm mt-2">Diseñado con ❤️ por Kimberly Escobedo & Xiomara de la O.</p>
       </footer>
 
     </div>
